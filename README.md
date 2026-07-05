@@ -65,3 +65,43 @@ highest-scoring box per FDI class ("argmax-per-class") rather than filtering by 
 confidence. Box positions are reasonably accurate in practice, but the displayed scores are not
 calibrated probabilities and per-tooth numbering should be treated as approximate, not
 diagnostic-grade.
+
+## Evaluation against ground truth
+
+`fdi_ground_truth_template.csv` records, for a 15-image subset, which of the 32 FDI tooth
+positions each patient actually has. `evaluate_fdi.py` re-runs the FDI model on those 15 images,
+compares against the CSV, and writes:
+
+- `fdi_evaluation_report.csv` - per-class precision/recall
+- `result4/` - annotated images (green box = correct, red box = phantom tooth, caption lists
+  missed teeth) - gitignored, same patient-privacy reason as the other result folders
+
+```
+python evaluate_fdi.py
+```
+
+Two real issues were found and fixed here:
+
+1. **A fixed-position artifact was being detected as a tooth.** Inspecting raw per-query boxes
+   across several unrelated patients turned up the exact same pixel box (around x=48-54%,
+   y=60-69% of the image) competing for different tooth labels in each image - only possible if
+   it's a stationary object in the scan (a bite block / positioning peg), not a tooth, since a
+   real tooth's position varies between patients. `evaluate_fdi.py` now excludes any detection
+   whose box center falls in that zone (`ARTIFACT_ZONE`).
+2. **Recall was too low (0.75).** The model's classification head is uncalibrated (see above), so
+   the original confidence floor (0.02) was cutting off many real teeth along with the noise. A
+   threshold sweep (see `tune_fdi_postprocessing.py`) found 0.012 recovers recall to 0.97 with
+   essentially no precision cost (0.970 vs 0.969 before). A fancier class-agnostic-NMS +
+   per-box-argmax pipeline was also tried but made recall *worse* (down to ~0.58), so it was
+   dropped in favor of this simpler threshold retune.
+
+Result: **precision 0.970, recall 0.972** (was 0.969 / 0.752), on the 15 ground-truth images.
+A handful of false positives remain (14, spread over 6 images) - inspecting them shows these are
+mostly real teeth assigned the *wrong* FDI code (e.g. crowding/rotation confusing the quadrant or
+tooth-type guess), not the artifact from issue 1, which is a separate and harder problem: the
+model's tooth-type classification itself is unreliable, and fixing that would need real
+bounding-box-level training data (this dataset only has image-level tooth-presence labels, not
+box annotations, so proper re-training of the detector isn't possible here). Also note the
+threshold was tuned on the same 15 images used to report these numbers (no separate validation
+set was available), so real-world performance on new, unlabeled images is likely somewhat lower
+than these numbers suggest.

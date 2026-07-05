@@ -2,6 +2,8 @@
 dataset/
 results/
 result2/
+result3/
+result4/
 
 # Downloaded model weights - fetched via download_model.py, not vendored
 model/
