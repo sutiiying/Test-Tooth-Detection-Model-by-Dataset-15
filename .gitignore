@@ -1,0 +1,15 @@
+# Patient data and generated outputs - not tracked (privacy)
+dataset/
+results/
+
+# Downloaded model weights - fetched via download_model.py, not vendored
+model/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Ultralytics run artifacts
+runs/

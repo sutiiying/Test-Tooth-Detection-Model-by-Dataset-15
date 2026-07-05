@@ -1,0 +1,5 @@
+torch
+torchvision
+ultralytics
+huggingface_hub
+gdown
