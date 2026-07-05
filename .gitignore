@@ -1,6 +1,7 @@
 # Patient data and generated outputs - not tracked (privacy)
 dataset/
 results/
+result2/
 
 # Downloaded model weights - fetched via download_model.py, not vendored
 model/

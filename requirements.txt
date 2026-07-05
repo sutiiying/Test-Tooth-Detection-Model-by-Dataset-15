@@ -1,5 +1,7 @@
 torch
 torchvision
 ultralytics
+transformers
 huggingface_hub
 gdown
+Pillow
